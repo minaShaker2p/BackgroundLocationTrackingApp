@@ -1,4 +1,4 @@
-package com.rezkalla.backgroundlocationtrackingapp.utils
+package com.rezkalla.data
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
