@@ -1,33 +1,45 @@
 package com.rezkalla.data
 
 import android.content.SharedPreferences
-import androidx.core.content.edit
+
+import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+val SharedPreferences.delegates get() = SharedPreferenceDelegates(this)
 
-inline operator fun <reified T> SharedPreferences.getValue(thisRef: Any, property: KProperty<*>): T {
+class SharedPreferenceDelegates(private val prefs: SharedPreferences) {
+    fun boolean(default: Boolean = false, key: String? = null) =
+        create(default, key, prefs::getBoolean, prefs.edit()::putBoolean)
 
-    return when(T::class)
-    {
-        Boolean::class -> getBoolean(property.name, false)
-        Int::class -> getInt(property.name, 0)
-        Float::class -> getFloat(property.name, 0.0f)
-        Long::class -> getLong(property.name, 0L)
-        String::class -> getString(property.name, "")
-        else -> throw java.lang.UnsupportedOperationException()
-    } as T
+    fun float(default: Float = 0.0F, key: String? = null) =
+        create(default, key, prefs::getFloat, prefs.edit()::putFloat)
+
+    fun int(default: Int = 0, key: String? = null) =
+        create(default, key, prefs::getInt, prefs.edit()::putInt)
+
+    fun string(default: String = "", key: String? = null) =
+        create(default, key, { k, d -> prefs.getString(k, d) as String }, prefs.edit()::putString)
+
+    fun long(default: Long = 0L, key: String? = null) =
+        create(default, key, prefs::getLong, prefs.edit()::putLong)
+
+
 }
 
-operator fun <T> SharedPreferences.setValue(thisRef: Any, property: KProperty<*>, value: T) {
-    edit {
-        when (value) {
-            is Boolean -> putBoolean(property.name, value)
-            is Int -> putInt(property.name, value)
-            is Float -> putFloat(property.name, value)
-            is Long -> putLong(property.name, value)
-            is String -> putString(property.name, value)
-            else -> throw UnsupportedOperationException()
-        }
+fun <T : Any> create(
+    default: T,
+    key: String?,
+    getter: (key: String, default: T) -> T,
+    setter: (key: String, value: T) -> SharedPreferences.Editor
+) =
+    object : ReadWriteProperty<Any, T> {
+        private fun key(property: KProperty<*>) = key ?: property.name
+        override fun getValue(thisRef: Any, property: KProperty<*>): T =
+            getter(key(property), default)
 
+        override fun setValue(thisRef: Any, property: KProperty<*>, value: T) =
+            setter(key(property), value).apply()
     }
-}
+
+
+

@@ -49,5 +49,7 @@ class MainActivity : AppCompatActivity() {
         switchEnable.setOnCheckedChangeListener { _, isChecked ->
             settingRepository?.isEnabled = isChecked
         }
+        Toast.makeText(this, settingRepository?.nickName, Toast.LENGTH_SHORT).show()
     }
+
 }
